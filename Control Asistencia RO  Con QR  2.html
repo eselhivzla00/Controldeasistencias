@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Asistencia QR</title>
+    <style>
+        /* CSS Básico existente */
+        body {
+            font-family: sans-serif;
+            background-color: #f3f4f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 1rem;
+            margin: 0;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 448px;
+            padding: 0.5rem;
+        }
+        .logo-container {
+            margin-bottom: 2rem;
+        }
+        .logo {
+            height: 8rem;
+            width: auto;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .card {
+            background-color: #ffffff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 0.5rem;
+            width: 100%;
+            padding: 1.5rem;
+            box-sizing: border-box;
+        }
+        .card-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0;
+        }
+        .input-group {
+            margin-bottom: 1rem;
+        }
+        .input-group:last-of-type {
+             margin-bottom: 1.5rem;
+        }
+        .input-field {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.25rem;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            box-sizing: border-box;
+        }
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .button {
+            padding: 0.75rem 1rem;
+            border-radius: 0.25rem;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            transition: background-color 150ms ease-in-out;
+            color: #ffffff;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            text-align: center;
+        }
+        .button:hover {
+            opacity: 0.9;
+        }
+        .button-entrada {
+            background-color: #166534;
+        }
+        .button-entrada:hover {
+            background-color: #14532d;
+        }
+        .button-salida {
+            background-color: #1e3a8a;
+        }
+         .button-salida:hover {
+            background-color: #172554;
+        }
+        .button-visitante {
+            background-color: #4b5563;
+            width: 100%;
+            display: block;
+            margin-bottom: 1.5rem;
+        }
+         .button-visitante:hover {
+            background-color: #374151;
+        }
+
+        .current-time {
+            margin-top: 1.5rem;
+            text-align: center;
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+         .status-message {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            border-radius: 0.25rem;
+            text-align: center;
+            font-weight: 500;
+            display: none;
+            word-break: break-word;
+         }
+         .status-success {
+             background-color: #dcfce7;
+             color: #16a34a;
+             border: 1px solid #86efac;
+         }
+          .status-error {
+             background-color: #fee2e2;
+             color: #dc2626;
+             border: 1px solid #fca5a5;
+         }
+
+        /* --- Nuevos estilos para el Lector QR --- */
+        .qr-scanner-container {
+            margin-bottom: 1.5rem; /* Espacio debajo del lector */
+            display: flex; /* Usar flexbox para centrar y alinear botones */
+            flex-direction: column;
+            align-items: center;
+        }
+        #qr-reader {
+            width: 100%; /* Ocupa el ancho del contenedor */
+            max-width: 300px; /* Tamaño máximo del área del lector */
+            margin-bottom: 1rem; /* Espacio entre el área de video y los botones */
+            border: 1px solid #d1d5db; /* Borde opcional */
+        }
+         /* Estilos para los botones de escanear/detener */
+        #start-scan-button, #stop-scan-button {
+            width: auto; /* No ocupar todo el ancho */
+            padding: 0.5rem 1.5rem;
+        }
+
+
+    </style>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+</head>
+<body>
+
+<div class="container">
+  <div class="logo-container">
+    <img src="https://picsum.photos/250/125" alt="Logotipo de la Empresa" class="logo" />
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Control de Asistencia QR</h2>
+    </div>
+    <div class="card-content">
+
+      <div class="qr-scanner-container">
+          <div id="qr-reader"></div>
+          <button id="start-scan-button" class="button button-entrada">Escanear Código QR</button>
+          <button id="stop-scan-button" class="button button-visitante" style="display: none;">Detener Escaneo</button>
+      </div>
+      <div class="input-group">
+        <label for="name">Nombre:</label> <input
+          type="text"
+          id="name"
+          placeholder="Nombre"
+          class="input-field"
+          required
+        />
+      </div>
+      <div class="input-group">
+         <label for="id">ID / Código QR:</label> <input
+          type="text"
+          id="id"
+          placeholder="ID (Escanea QR o escribe)"
+          class="input-field"
+          required
+        />
+      </div>
+
+      <div class="button-grid">
+        <button class="button button-entrada" onclick="handleSubmit('Entrada')">
+          Registrar Entrada
+        </button>
+        <button class="button button-salida" onclick="handleSubmit('Salida')">
+          Registrar Salida
+        </button>
+      </div>
+
+      <button class="button button-visitante" onclick="handleSubmit('Visitante')">
+        Registrar Visitante
+      </button>
+
+      <div id="currentTime" class="current-time">
+        Cargando hora...
+      </div>
+
+      <div id="statusMessage" class="status-message">
+        </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+    // ********************************************************
+    // *** ESTA ES LA URL DE TU APPS SCRIPT WEB APP PUBLICADO ***
+    // *** Proporcionada por ti: https://script.google.com/.../exec ***
+    // ********************************************************
+    const APPS_SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwWzThVF8YAdKksxBDEdsDEPaV0bwavTt4d_uz7JkxUa0u98HQKVMoTpkQxXy6nIzi3/exec';
+
+    const nameInput = document.getElementById('name');
+    const idInput = document.getElementById('id');
+    const currentTimeDiv = document.getElementById('currentTime');
+    const statusMessageDiv = document.getElementById('statusMessage');
+
+    // --- Nuevas variables para el Lector QR ---
+    const qrReaderDiv = document.getElementById('qr-reader');
+    const startScanButton = document.getElementById('start-scan-button');
+    const stopScanButton = document.getElementById('stop-scan-button');
+    let html5QrcodeScanner = null; // Variable para mantener la instancia del escáner
+
+
+    // --- Funciones Existentes ---
+    function updateTime() {
+        const now = new Date();
+        const options = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
+        currentTimeDiv.textContent = now.toLocaleTimeString(undefined, options);
+    }
+    setInterval(updateTime, 1000);
+    updateTime();
+
+    function showStatusMessage(message, isSuccess = true) {
+        statusMessageDiv.textContent = message;
+        statusMessageDiv.className = 'status-message ' + (isSuccess ? 'status-success' : 'status-error');
+        statusMessageDiv.style.display = 'block';
+        // Ocultar el mensaje después de unos segundos, excepto si es un error de cámara al iniciar
+        if (!message.includes('Error al iniciar la cámara')) {
+             setTimeout(() => {
+                statusMessageDiv.style.display = 'none';
+            }, 6000);
+        } else {
+            // Mantener visible el error de cámara hasta que el usuario intente de nuevo
+        }
+    }
+
+    // --- Nuevas Funciones para el Lector QR ---
+
+    // Función que se llama cuando se escanea un código QR con éxito
+    function onScanSuccess(decodedText, decodedResult) {
+      console.log(`QR Code scanned: ${decodedText}`);
+      idInput.value = decodedText; // Pone el texto escaneado en el campo ID
+      showStatusMessage(`Código QR escaneado: ${decodedText}`, true);
+      stopScanner(); // Detiene el escáner después de un escaneo exitoso
+    }
+
+    // Función que se llama si hay un error de escaneo (continuo, no al iniciar)
+    // No suele ser necesario mostrar esto al usuario, a menos que quieras depurar.
+    function onScanFailure(error) {
+      // console.warn(`QR Code scan error: ${error}`); // Muy ruidoso para la consola
+    }
+
+    // Función para iniciar el escáner QR
+    function startScanner() {
+       showStatusMessage('Iniciando escáner...', true);
+       // Oculta el botón de iniciar, muestra el de detener
+       startScanButton.style.display = 'none';
+       stopScanButton.style.display = 'block';
+       statusMessageDiv.style.display = 'none'; // Oculta mensajes previos
+
+       // Crea la instancia del escáner si no existe
+       if (!html5QrcodeScanner) {
+           html5QrcodeScanner = new Html5Qrcode("qr-reader");
+       }
+
+       // Inicia el escaneo usando la cámara trasera si está disponible
+       // 'environment' prefiere la cámara trasera; 'user' prefiere la delantera
+       html5QrcodeScanner.start(
+         { facingMode: "environment" }, // O { deviceId: 'tu_id_de_camara' } si necesitas especificar
+         {
+           fps: 10,    // Cuadros por segundo a intentar escanear
+           qrbox: { width: 250, height: 250 } // Tamaño del área de escaneo en píxeles
+         },
+         onScanSuccess, // Callback para éxito
+         onScanFailure  // Callback para error continuo
+       )
+       .catch(err => {
+           // Si hay un error al iniciar (ej: sin cámara, permisos denegados)
+           console.error('Error al iniciar la cámara:', err);
+           showStatusMessage(`Error al iniciar la cámara: ${err}. Asegúrate de dar permisos.`, false);
+           stopScanButton.style.display = 'none'; // Oculta detener si no pudo iniciar
+           startScanButton.style.display = 'block'; // Muestra iniciar de nuevo
+           html5QrcodeScanner = null; // Limpia la instancia si falló al iniciar
+       });
+    }
+
+    // Función para detener el escáner QR
+     function stopScanner() {
+         // Verifica si el escáner está inicializado y no ya detenido
+         if (html5QrcodeScanner && html5QrcodeScanner.getState() !== Html5QrcodeScannerState.NOT_STARTED) {
+             html5QrcodeScanner.stop().then(() => {
+                 console.log("Escaneo QR detenido.");
+                 showStatusMessage('Escáner detenido.', true);
+                 startScanButton.style.display = 'block'; // Muestra botón iniciar
+                 stopScanButton.style.display = 'none'; // Oculta botón detener
+             }).catch(err => {
+                 console.error("Error al detener el escaneo QR:", err);
+                 showStatusMessage('Error al detener el escáner.', false);
+                 startScanButton.style.display = 'block'; // Asegura que iniciar se muestre incluso con error al detener
+                 stopScanButton.style.display = 'none'; // Asegura que detener se oculte
+             });
+         } else {
+              console.log("El escáner no estaba corriendo.");
+              startScanButton.style.display = 'block'; // Asegura que iniciar se muestre
+              stopScanButton.style.display = 'none'; // Asegura que detener se oculte
+         }
+         // Limpia la instancia después de intentar detener, independientemente del éxito
+         html5QrcodeScanner = null;
+     }
+
+
+    // --- Event Listeners para los botones del Escáner ---
+    startScanButton.addEventListener('click', startScanner);
+    stopScanButton.addEventListener('click', stopScanner);
+
+
+    // --- Función para enviar datos (Existe y No Cambia) ---
+    // Esta función toma el Nombre e ID (que ahora puede venir del escaneo)
+    // y el tipo de botón pulsado, y los envía al Apps Script.
+    function handleSubmit(type) {
+        const name = nameInput.value.trim(); // .trim() elimina espacios al inicio y final
+        const id = idInput.value.trim(); // Obtiene el ID del campo, que pudo ser llenado por el escáner
+
+        if (!name || !id) {
+            showStatusMessage('Por favor, ingresa Nombre e ID antes de continuar.', false);
+            return; // Detener la ejecución si faltan campos
+        }
+
+        // Asegurarse de que el escáner esté detenido antes de enviar
+        stopScanner(); // Esto no mostrará un error si ya estaba detenido
+
+        // Los datos de fecha y hora se capturarán en el script de Apps Script para mayor precisión.
+        // Aquí solo preparamos los datos del formulario.
+        const dataToSend = {
+            name: name,
+            id: id,
+            type: type // 'Entrada', 'Salida' o 'Visitante'
+        };
+
+        const formBody = Object.keys(dataToSend)
+            .map(key => encodeURIComponent(key) + '=' + encodeURIComponent(dataToSend[key]))
+            .join('&');
+
+        showStatusMessage('Enviando datos...', true); // Mensaje de envío
+
+        fetch(APPS_SCRIPT_WEB_APP_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: formBody
+        })
+        .then(response => {
+             if (response.ok) {
+                return response.text();
+             }
+             return response.text().then(text => { throw new Error(text) });
+        })
+        .then(responseText => {
+            if (responseText === "Success") {
+                 showStatusMessage('Registro guardado con éxito (' + type + ').', true);
+                 // Limpiar campos después del envío exitoso
+                 nameInput.value = '';
+                 idInput.value = '';
+            } else {
+                 showStatusMessage('Error en Apps Script: ' + responseText, false);
+            }
+            console.log('Respuesta de Apps Script:', responseText);
+        })
+        .catch((error) => {
+            showStatusMessage('Error de conexión o al procesar respuesta: ' + error.message, false);
+            console.error('Error:', error);
+        });
+    }
+
+</script>
+
+</body>
+</html>
